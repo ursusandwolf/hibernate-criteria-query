@@ -4,10 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import com.google.protobuf.MapEntry;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
-import jakarta.persistence.criteria.Path;
+import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import ma.hibernate.model.Phone;
 import org.hibernate.Session;
@@ -40,24 +39,25 @@ public class PhoneDaoImpl extends AbstractDao implements PhoneDao {
     @Override
     public List<Phone> findAll(Map<String, String[]> params) {
         Session session = factory.openSession();
-        CriteriaBuilder criteriaBuilder = session.getCriteriaBuilder();
-        CriteriaQuery<Phone> query = criteriaBuilder.createQuery(Phone.class);
+        CriteriaBuilder builder = session.getCriteriaBuilder();
+        CriteriaQuery<Phone> query = builder.createQuery(Phone.class);
         Root<Phone> root = query.from(Phone.class);
-        List<Phone> resultList = new ArrayList<>();
         Set<Map.Entry<String, String[]>> entrySet = params.entrySet();
+        List<Predicate> predicates = new ArrayList<>();
         for (Map.Entry<String, String[]> entry : entrySet) {
             String key = entry.getKey();
             String[] values = entry.getValue();
-            for (String value : values) {
-                query.where(criteriaBuilder.equal(root.get(key), value));
-                resultList.addAll(session.createQuery(query).getResultList());
+            if (values.length == 1) {
+                predicates.add(builder.equal(root.get(key), values[0]));
+            } else {
+                for (String value : values) {
+                    predicates.add(builder.equal(root.get(key), value));
+                }
+                predicates.add(builder.or(predicates.toArray(new Predicate[0])));
             }
         }
-        return resultList;
+        query.where(builder.and(predicates.toArray(new Predicate[0])));
+        return session.createQuery(query).getResultList();
     }
-    /**
-     * // SELECT * FROM Phone as p WHERE p.id = 1
-     * query.where(criteriaBuilder.equal(root.get("id"), 1));
-     * Phone phone = session.createQuery(query).uniqueResult();
-     */
 }
+
