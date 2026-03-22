@@ -40,11 +40,6 @@ public class PhoneDaoImpl extends AbstractDao implements PhoneDao {
             for (Map.Entry<String, String[]> entry : params.entrySet()) {
                 String key = entry.getKey();
                 String[] values = entry.getValue();
-
-                if (values == null || values.length == 0) {
-                    continue;
-                }
-
                 predicate = cb.and(predicate,
                         root.get(key).in(Arrays.asList(values)));
             }
