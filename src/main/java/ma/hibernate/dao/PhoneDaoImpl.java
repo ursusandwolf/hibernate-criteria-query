@@ -4,6 +4,7 @@ import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import ma.hibernate.model.Phone;
@@ -40,16 +41,14 @@ public class PhoneDaoImpl extends AbstractDao implements PhoneDao {
                 String key = entry.getKey();
                 String[] values = entry.getValue();
                 if (values.length == 1) {
-                    predicate = cb.and(cb.equal(root.get(key), values[0]));
+                    predicate = cb.and(predicate,
+                            cb.equal(root.get(key), values[0]));
                 } else {
-                    Predicate p2 = cb.and();
-                    for (String value : values) {
-                        p2 = cb.or(cb.equal(root.get(key), value));
-                    }
-                    predicate = cb.and(predicate, p2);
+                    predicate = cb.and(predicate,
+                            root.get(key).in(Arrays.asList(values)));
                 }
             }
-            query.where(cb.and(predicate));
+            query.where(predicate);
             return session.createQuery(query).getResultList();
         }
     }
